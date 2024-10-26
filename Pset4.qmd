@@ -8,4 +8,48 @@ format:
 ---
 
 ## Tidyverse
+```{r, message=FALSE}
+library(tidyverse)
+library(nycflights13)
+```
+a. First table
+```{r, Q1a_1}
+flights %>%
+  group_by(origin) %>%
+  summarise(mean_delay=mean(arr_delay, na.rm=TRUE),
+            median_delay=median(arr_delay, na.rm=TRUE),
+            n_flights=n()) %>%
+  ungroup() %>%
+  filter(n_flights >= 10) %>%
+  left_join(airports, by=join_by(origin == faa)) %>%
+  select(name, mean_delay, median_delay) %>%
+  arrange(desc(mean_delay))
+```
+Second table
+```{r, Q1a_2}
+flights %>%
+  group_by(dest) %>%
+  summarise(mean_delay=mean(arr_delay, na.rm=TRUE),
+            median_delay=median(arr_delay, na.rm=TRUE),
+            n_flights=n()) %>%
+  ungroup() %>%
+  filter(n_flights >= 10) %>%
+  left_join(airports, by=join_by(dest == faa)) %>%
+  mutate(name = coalesce(name, dest)) %>%
+  select(name, mean_delay, median_delay) %>%
+  arrange(desc(mean_delay)) %>%
+  print(n=102)
+```
+b. Here's the table
+```{r, Q1b}
+flights %>%
+  left_join(planes, by = "tailnum") %>%
+  mutate(mph=60*distance/air_time) %>%
+  group_by(model) %>%
+  summarize(avg_mph = mean(mph, na.rm = TRUE),
+            n_flights = n()) %>%
+  arrange(desc(avg_mph)) %>%
+  slice_head(n=1)
+```
+
 

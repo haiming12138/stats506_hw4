@@ -51,5 +51,69 @@ flights %>%
   arrange(desc(avg_mph)) %>%
   slice_head(n=1)
 ```
+## get_temp()
+a. Here's the function definition
+```{r, Q2_1}
+#' Request the average temperature for a given month
+#' @param month Numeric or string value represent 1-12
+#' @param year A numeric year
+#' @param data The dataset
+#' @param celsius Logically indicating whether the results should be in Celsius
+#' @param average_fn Function to compute average
+#' @return Average temperature as an atomic numeric vector
+get_temp <- function(month, year, data, celsius=FALSE, average_fn=mean) {
+  # input checking
+  if (is.numeric(month)) {
+    if (month < 1 | month > 12) {
+      stop('Invalid month: must between 1 ~ 12')
+    }
+  }
+  else if (is.character(month)) {
+    # convert string month to numeric scale of 1 to 12
+    months <- c("January", "February", "March", "April", 
+                "May", "June", "July", "August", "September", 
+                "October", "November", "December")
+    month <- which(match.arg(month, months) == months)
+  }
+  else {
+    stop('Invalid month: must be numeric or string')
+  }
+  
+  if(!is.numeric(year)) {
+    stop('Invalid year: must be numeric')
+  }
+  if(year < 1997 | year > 2000) {
+    stop('Invalid year: must between 1997 ~ 2000')
+  }
+  
+  if(!is.function(average_fn)) {
+    stop('average_fn must be a function')
+  }
+  
+  data %>% 
+    filter((month_numeric == !!month) & (year == !!year)) %>%
+    select(temp) %>%
+    summarize(avg_tmp = average_fn(temp)) %>%
+    mutate(avg_tmp = ifelse(celsius, 5/9*(avg_tmp - 32), avg_tmp)) %>%
+    as.numeric -> res
+  return(res)
+}
+```
+Here's the demonstration
+```{r, Q2_2, error=TRUE}
+nnmaps <- read_csv('./chicago-nmmaps.csv', show_col_types=FALSE)
+get_temp("Apr", 1999, data = nnmaps)
+get_temp("Apr", 1999, data = nnmaps, celsius = TRUE)
+get_temp(10, 1998, data = nnmaps, average_fn = median)
+get_temp(13, 1998, data = nnmaps)
+get_temp(2, 2005, data = nnmaps)
+get_temp("November", 1999, data =nnmaps, celsius = TRUE,
+         average_fn = function(x) {
+           x %>% sort -> x
+           x[2:(length(x) - 1)] %>% mean %>% return
+         })
+```
+
+
 
 

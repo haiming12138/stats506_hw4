@@ -1,0 +1,11 @@
+---
+title: 'STATS 506 Problem Set #4'
+author: 'Haiming Li'
+format: 
+  html:
+    toc: true
+  pdf: default
+---
+
+## Tidyverse
+

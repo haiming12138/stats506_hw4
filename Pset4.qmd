@@ -114,6 +114,87 @@ get_temp("November", 1999, data =nnmaps, celsius = TRUE,
          })
 ```
 
+## Visualization
+a. Here I plot the median sales price over time, with ribbon of minimum and maximum value based on the IQR method. As shown, there is a slight increasing trend in median price, and the spread of price also has a increasing trend. Thus, there is a change in price over time.
+```{r, Q3a}
+library(ggplot2)
+library(tibble)
+library(dplyr)
+
+df <- as_tibble(read.csv('./df_for_ml_improved_new_market.csv'))
+price_stats <- df %>%
+  group_by(year) %>%
+  summarize(
+    median_price = median(price_usd, na.rm = TRUE),
+    Q1 = quantile(price_usd, 0.25, na.rm = TRUE),
+    Q3 = quantile(price_usd, 0.75, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    IQR = Q3 - Q1,
+    lwr = Q1 - 1.5 * IQR,
+    upr = Q3 + 1.5 * IQR
+  ) %>%
+  select(year, median_price, lwr, upr)
+
+ggplot(price_stats, aes(x=year, y=median_price)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = .2) +
+  labs(title = "Median Price Over Year",
+       x = "Year",
+       y = "Sales Price") +
+  scale_x_continuous(breaks = unique(price_stats$year)) +
+  scale_y_continuous(labels = scales::dollar_format()) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+b. As shown, the distribution of genre does change over time. The amount of paintings decreases until 2002 and then maintains at a relatively stable level. Also, the amount of Photography increases until 2002 and then maintains at a relatively stable level. For Sculpture, it has the lowest point in 1999, but is relatively stable since then. Print first appears in 2000, and has a slight increase after that, then remains at a relatively stable level after 2005. Other genre started to appear in 2007, but are taking very little percentages of sales, and is almost negligible.
+```{r, Q3b, message=FALSE, warning=FALSE}
+library(reshape2)
+genre_columns <- grep('Genre___', colnames(df), value = TRUE)
+genre_data <- df[, c('id', 'year', 'price_usd', genre_columns)] %>%
+  melt(id.vars = c('id', 'year', 'price_usd')) %>%
+  filter(value == 1) %>%
+  mutate(genre=sub('Genre___', '', variable)) %>%
+  select(id, year, price_usd, genre)
+
+# Ex: If the genre is both 'Other' and 'Painting', the final genre should be
+#     'Painting'
+genre_priority <- c("Photography", "Print", "Sculpture", "Painting", "Others")
+genre_data$genre <- factor(genre_data$genre, levels = genre_priority)
+genre_data <- genre_data[!duplicated(genre_data$id), 2:4]
+
+ggplot(genre_data, aes(x = year, fill = genre)) +
+  geom_bar(position = "fill") +
+  labs(title = "Genre Distribution Over Years",
+       x = "Year",
+       y = "Percentage") +
+  scale_x_continuous(breaks = unique(genre_data$year)) +
+  coord_flip() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+c. As shown, different genre seems to have similar trends over the years. Although there is a unusually high spike in price of Prints genre, other years different genre seems to have similar trend in terms of price fluctuation. Also, on average, Photography tend to have the highest sale price, Print have the second highest, Painting the third, Sculpture the fourth, and Other the cheapest.
+```{r, Q3d, message=FALSE}
+genre_data <- genre_data %>%
+  group_by(year, genre) %>%
+  summarise(median_price=median(price_usd)) %>%
+  ungroup()
+
+ggplot(genre_data, aes(x=year, y=median_price, colour=genre)) +
+  geom_line() +
+  labs(title = "Median Price By Genre Over Year",
+       x = "Year",
+       y = "Sales Price") +
+  scale_x_continuous(breaks = unique(genre_data$year)) +
+  scale_y_continuous(labels = scales::dollar_format()) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+## Attribution of Source
+* [Github Repo](https://github.com/haiming12138/stats506_hw4)
+* [Use of aggregate function](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/aggregate)
+* [Label manipulation in ggplot](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/aggregate)
+
 
 
 
